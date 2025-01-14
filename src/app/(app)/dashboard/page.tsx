@@ -1,3 +1,4 @@
+"use client";
 import MessageCard from "@/components/MessageCard";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -35,7 +36,7 @@ function Page() {
 
 	const acceptMessages = watch("acceptMessages");
 
-	const fetchAcceptMessage = useCallback(async () => {
+	const fetchAcceptMessages = useCallback(async () => {
 		setIsSwitchLoading(true);
 		try {
 			const response = await axios.get<ApiResponse>("/api/accept-messages");
@@ -45,25 +46,25 @@ function Page() {
 			toast({
 				title: "Error",
 				description:
-					axiosError.response?.data.message ||
+					axiosError.response?.data.message ??
 					"Failed to fetch message settings",
 				variant: "destructive",
 			});
 		} finally {
 			setIsSwitchLoading(false);
 		}
-	}, [setValue]);
+	}, [setValue, toast]);
 
 	const fetchMessages = useCallback(
 		async (refresh: boolean = false) => {
 			setIsLoading(true);
-			setIsSwitchLoading(true);
+			setIsSwitchLoading(false);
 			try {
 				const response = await axios.get<ApiResponse>("/api/get-messages");
 				setMessages(response.data.messages || []);
 				if (refresh) {
 					toast({
-						title: "Messages refreshed",
+						title: "Refreshed Messages",
 						description: "Showing latest messages",
 					});
 				}
@@ -72,8 +73,7 @@ function Page() {
 				toast({
 					title: "Error",
 					description:
-						axiosError.response?.data.message ||
-						"Failed to fetch message settings",
+						axiosError.response?.data.message ?? "Failed to fetch messages",
 					variant: "destructive",
 				});
 			} finally {
@@ -81,14 +81,14 @@ function Page() {
 				setIsSwitchLoading(false);
 			}
 		},
-		[setIsLoading, setMessages]
+		[setIsLoading, setMessages, toast]
 	);
 
 	useEffect(() => {
 		if (!session || !session.user) return;
 		fetchMessages();
-		fetchAcceptMessage();
-	}, [session, setValue, fetchAcceptMessage, fetchMessages]);
+		fetchAcceptMessages();
+	}, [session, setValue, fetchAcceptMessages, fetchMessages]);
 
 	const handleSwitchChange = async () => {
 		try {
@@ -112,17 +112,17 @@ function Page() {
 		}
 	};
 
-    const {username} = session?.user as User;
-    const baseURL = `${window.location.protocol}//${window.location.host}`
-    const profileURL = `${baseURL}/u/${username}`
+	const { username } = session?.user as User;
+	const baseURL = `${window.location.protocol}//${window.location.host}`;
+	const profileURL = `${baseURL}/u/${username}`;
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(profileURL)
-        toast({
-            title: "URL copied",
-            description: "Profile URL has been copied to clipboard"
-        })
-    }
+	const copyToClipboard = () => {
+		navigator.clipboard.writeText(profileURL);
+		toast({
+			title: "URL copied",
+			description: "Profile URL has been copied to clipboard",
+		});
+	};
 
 	if (!session || !session.user) {
 		return <div>Please login</div>;
@@ -176,7 +176,7 @@ function Page() {
 				{messages.length > 0 ? (
 					messages.map((message, index) => (
 						<MessageCard
-							key={message._id}
+							key={message._id.toString()}
 							message={message}
 							onMessageDelete={handleDeleteMessage}
 						/>
